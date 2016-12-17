@@ -159,11 +159,7 @@ void reachServer(struct Data data, int bbPort, char *arg, char *arg2)
 	int sockfd, n, bPort;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
-	char buffer[256];
-
-	// printf("d.id: %d\n", data.id);
-	// printf("d.txt: %s\n", data.text);
-	// printf("d.tst: %d\n", data.timestamp);
+	char buffer[256], ans[256];
 
     printf("[RS] Trying to reach server...\n");
 
@@ -200,6 +196,10 @@ void reachServer(struct Data data, int bbPort, char *arg, char *arg2)
 	printf("msg: %s\n", message);
 	printf("msg len: %lu\n", sizeof(message));
 	write(sockfd, message, strlen(message));
+
+	n = read(sockfd, ans, 256);
+    if (n < 0) 
+    	fprintf(stderr, "[RS] ERROR reading from socket\n");
 
 	printf("[RS] FINISH\n");
 }

@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     time_t timestamp;
-    char buffer[256];
+    char buffer[272];
     
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     portno = atoi(argv[2]);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) 
-        error("ERROR opening socket");
+        fprintf(stderr, "ERROR opening socket\n");
     
     // Get server data
     server = gethostbyname(argv[1]);
@@ -52,39 +52,39 @@ int main(int argc, char *argv[])
 
     // Trying to connect to socket
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
+        fprintf(stderr, "ERROR connecting!\n");
 
     
     // Listen 
     bzero(buffer,256);
     n = read(sockfd,buffer,255);
     if (n < 0) 
-         error("ERROR reading from socket");
+         fprintf(stderr, "ERROR reading from socket!\n");
     printf("%s\n",buffer);
 
     // Response
     bzero(buffer,272); //256 for the message + 7 for get/set id
-    while(fgets(buffer,255,stdin) != NULL)
+
+    while(fgets(buffer, 272,stdin) != NULL)
     {
+        // Prepare the info for the server
         timestamp = time(NULL);
         char *message, ans[256];
-        asprintf(&message, "%d %d ", 1, timestamp);
+        asprintf(&message, "%d %ld ", 1, timestamp);
         strcat(message, buffer);
-        printf("msg: %s\n", message);   
+
+        // Send it
         n = write(sockfd, message, strlen(message));
         if (n < 0) 
-            error("ERROR writing to socket");    
+            fprintf(stderr, "ERROR writing to socket!\n");   
         bzero(buffer,256);
+        // Receive the server's response
         n = read(sockfd, ans, 256);
         if (n < 0) 
-             error("ERROR reading from socket");
+             fprintf(stderr, "ERROR reading from socket!\n");
         printf("%s\n", ans);
     }
     
-
-    
-
-
     close(sockfd);
 
     return 0;
