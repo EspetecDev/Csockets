@@ -193,8 +193,6 @@ void reachServer(struct Data data, int bbPort, char *arg, char *arg2)
 
 	char *message;
 	asprintf(&message, "%d %d set %d %s", 0, data.timestamp, data.id, data.text);
-	printf("msg: %s\n", message);
-	printf("msg len: %lu\n", sizeof(message));
 	write(sockfd, message, strlen(message));
 
 	n = read(sockfd, ans, 256);
@@ -218,7 +216,7 @@ void manageConnection(int sock, int bPort, char *arg, char *arg2)
 	write(sock, message, strlen(message));
 
 	// Read client's input
-	while((msg_len = recv(sock, client_input, 270, 0)) > 0)
+	while((msg_len = recv(sock, client_input, 276, 0)) > 0)
 	{
 		// Receiving client's data
 		printf("[SERVER] Input:\n\t%s\n", client_input);

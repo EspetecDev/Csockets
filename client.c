@@ -10,36 +10,32 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <time.h>
-void error(const char *msg)
-{
-    perror(msg);
-    exit(0);
-}
 
-int main(int argc, char *argv[])
+int makeConnexion(char *port, char *hostname)
 {
     int sockfd, portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
     time_t timestamp;
     char buffer[272];
-    
-    if (argc < 3) {
-       fprintf(stderr,"usage %s hostname port\n", argv[0]);
-       exit(0);
-    }
+    int correct = 0;
 
     // Init socket
-    portno = atoi(argv[2]);
+    portno = atoi(port);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) 
+    {
         fprintf(stderr, "ERROR opening socket\n");
+        correct = 1;
+        return 1;
+    }
     
     // Get server data
-    server = gethostbyname(argv[1]);
+    server = gethostbyname(hostname);
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
-        exit(0);   
+        correct = 1;
+        return 1;   
     }
     
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -52,20 +48,29 @@ int main(int argc, char *argv[])
 
     // Trying to connect to socket
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
+    {
         fprintf(stderr, "ERROR connecting!\n");
+        correct = 1;
+        return 1;
+    }
 
     
     // Listen 
     bzero(buffer,256);
     n = read(sockfd,buffer,255);
-    if (n < 0) 
-         fprintf(stderr, "ERROR reading from socket!\n");
-    printf("%s\n",buffer);
+    if (n < 0)
+    {
+        fprintf(stderr, "ERROR reading from socket!\n");
+        correct = 1;
+        return 1;
+    }
+    else
+        printf("%s\n",buffer);
 
     // Response
-    bzero(buffer,272); //256 for the message + 7 for get/set id
+    bzero(buffer,276); //256 for the message + 7 for get/set id + 9 for timestamp + id if client/server
 
-    while(fgets(buffer, 272,stdin) != NULL)
+    while(fgets(buffer, 276,stdin) != NULL && !correct)
     {
         // Prepare the info for the server
         timestamp = time(NULL);
@@ -75,17 +80,41 @@ int main(int argc, char *argv[])
 
         // Send it
         n = write(sockfd, message, strlen(message));
-        if (n < 0) 
-            fprintf(stderr, "ERROR writing to socket!\n");   
+        if (n < 0)
+        {
+            fprintf(stderr, "ERROR writing to socket!\n");
+            correct = 1;
+            return 1;
+        }
         bzero(buffer,256);
         // Receive the server's response
         n = read(sockfd, ans, 256);
-        if (n < 0) 
+        if (n < 0)
+        {
              fprintf(stderr, "ERROR reading from socket!\n");
+             correct = 1;
+             return 1;
+        }
         printf("%s\n", ans);
     }
     
     close(sockfd);
+
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+
+    
+    if (argc < 5) {
+       fprintf(stderr,"usage %s hostname port backup_hostname backup_ port\n", argv[0]);
+       exit(0);
+    }
+
+    if(makeConnexion(argv[2], argv[1]) == 1)
+        makeConnexion(argv[4], argv[3]);    
+    
 
     return 0;
 }
